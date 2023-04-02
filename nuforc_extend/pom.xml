@@ -11,11 +11,6 @@
         <exec.mainClass>jae.muzzin.nuforc_extend.Nuforc_extend</exec.mainClass>
     </properties>
     <dependencies>
-        <dependency> 
-            <groupId>com.google.code.geocoder-java</groupId> 
-            <artifactId>geocoder-java</artifactId> 
-            <version>0.16</version> 
-        </dependency>
         <dependency>
             <groupId>de.siegmar</groupId>
             <artifactId>fastcsv</artifactId>
