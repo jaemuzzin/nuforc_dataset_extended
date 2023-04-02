@@ -6,9 +6,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -36,7 +38,7 @@ public class Nuforc_extend {
         var reader = NamedCsvReader.builder().build(new FileReader("nuforc_reports.csv"));
         
         CsvWriter writer = CsvWriter.builder().build(new FileWriter("nuforc_latlong.csv"));
-        String[] headers = new String[]{"level_0","index","text","date_time","report_link","city","state","country","shape","duration","summary","posted","latitude","longitude"}; 
+        String[] headers = new String[]{"level_0","index","date_time","city","state","country","posted","latitude","longitude","shape","duration","summary","text"}; 
         writer.writeRow(headers);
         IntSupplier ids = new IntSupplier() {
             private int id = 0;
@@ -49,12 +51,36 @@ public class Nuforc_extend {
                 .map(row -> new HashMap<String, String>(row.getFields()))
                 //.peek(rm -> System.err.print(rm.toString()))
                 .filter(rowmap -> geocoder.containsKey(rowmap.get("state").toLowerCase()))
-                .filter(rowmap -> geocoder.get(rowmap.get("state").toLowerCase()).containsKey(rowmap.get("city").toLowerCase()))
-                .peek(rowmap -> rowmap.put("latitude", ""+geocoder.get(rowmap.get("state").toLowerCase()).get(rowmap.get("city").toLowerCase())[0]))
-                .peek(rowmap -> rowmap.put("longitude", ""+geocoder.get(rowmap.get("state").toLowerCase()).get(rowmap.get("city").toLowerCase())[1]))
+                .filter(r -> r.get("country").equals("USA") || r.get("country").equals("Canada"))
+                .peek(rm -> rm.put("city", rm.get("city").replace("(Canada)", "").trim().toLowerCase()))
+                .filter(rowmap -> geocoder.get(rowmap.get("state").toLowerCase()).containsKey(rowmap.get("city")))
+                .peek(rowmap -> rowmap.put("latitude", ""+geocoder.get(rowmap.get("state").toLowerCase()).get(rowmap.get("city"))[0]))
+                .peek(rowmap -> rowmap.put("longitude", ""+geocoder.get(rowmap.get("state").toLowerCase()).get(rowmap.get("city"))[1]))
                 .peek(rowmap -> rowmap.remove("stats"))
+                .peek(r -> r.remove("report_link"))
                 .peek(rm -> rm.put("level_0", ids.getAsInt()+""))
                 .peek(rm -> rm.put("index", rm.get("level_0")))
+                .peek(rm -> rm.put("text", rm.get("text").replaceAll("\\r\\n", " ").replaceAll("\\n", " ")))
+                .peek(rm -> rm.put("summary", rm.get("summary").replaceAll("\\r\\n", " ").replaceAll("\\n", " ")))
+                .forEach(rowmap -> writer.writeRow(Arrays.stream(headers).map(h -> rowmap.get(h)).collect(Collectors.toList()).toArray(new String[0])));
+        reader.close();
+        reader = NamedCsvReader.builder().build(new FileReader("nuforc_reports.csv"));
+        Random random = new Random(1234);
+        reader.stream()
+                .map(row -> new HashMap<String, String>(row.getFields()))
+                //.peek(rm -> System.err.print(rm.toString()))
+                .filter(rowmap -> geocoder.containsKey(rowmap.get("state").toLowerCase()))
+                .filter(r -> r.get("country").equals("USA") || r.get("country").equals("Canada"))
+                .peek(rm -> rm.put("city", rm.get("city").replace("(Canada)", "").trim().toLowerCase()))
+                .filter(rowmap -> !geocoder.get(rowmap.get("state").toLowerCase()).containsKey(rowmap.get("city")))
+                .peek(rowmap -> rowmap.put("latitude", ""+new ArrayList<Map.Entry<String, float[]>>(geocoder.get(rowmap.get("state").toLowerCase()).entrySet()).get(0).getValue()[0] + random.nextGaussian(0, 1)))
+                .peek(rowmap -> rowmap.put("longitude", ""+new ArrayList<Map.Entry<String, float[]>>(geocoder.get(rowmap.get("state").toLowerCase()).entrySet()).get(0).getValue()[1] + random.nextGaussian(0, 1)))
+                .peek(rowmap -> rowmap.remove("stats"))
+                .peek(r -> r.remove("report_link"))
+                .peek(rm -> rm.put("level_0", ids.getAsInt()+""))
+                .peek(rm -> rm.put("index", rm.get("level_0")))
+                .peek(rm -> rm.put("text", rm.get("text").replaceAll("\\r\\n", " ").replaceAll("\\n", " ")))
+                .peek(rm -> rm.put("summary", rm.get("summary").replaceAll("\\r\\n", " ").replaceAll("\\n", " ")))
                 .forEach(rowmap -> writer.writeRow(Arrays.stream(headers).map(h -> rowmap.get(h)).collect(Collectors.toList()).toArray(new String[0])));
         writer.close();
     }
