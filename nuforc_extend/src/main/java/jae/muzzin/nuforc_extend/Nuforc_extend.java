@@ -48,6 +48,7 @@ public class Nuforc_extend {
         Word2Vec word2vec = new Word2Vec.Builder()
                 .layerSize(256)
                 .windowSize(5)
+                .stopWords(Arrays.asList(new String[]{"the", "a", "from", "and", "then", "to", "has", "is", "had", "but", "have", "with", "it", "this", "that"}))
                 .minWordFrequency(3)
                 .tokenizerFactory(t)
                 .iterate(new SentenceIterator() {
