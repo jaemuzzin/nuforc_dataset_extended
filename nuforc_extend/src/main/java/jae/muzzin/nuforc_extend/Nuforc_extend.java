@@ -34,81 +34,99 @@ public class Nuforc_extend {
         if (!new File("nuforce_latlong.csv").exists()) {
             extendCSV();
         }
-        var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
-        IntSupplier prog = new IntSupplier() {
-            int i = 0;
+        if (!new File("word2vec.txt").exists()) {
 
-            @Override
-            public int getAsInt() {
-                return i++;
-            }
-        };
-        TokenizerFactory t = new DefaultTokenizerFactory();
-        t.setTokenPreProcessor(new CommonPreprocessor());
-        Word2Vec word2vec = new Word2Vec.Builder()
-                .layerSize(256)
-                .windowSize(5)
-                .stopWords(Arrays.asList(new String[]{"the", "a", "from", "and", "then", "to", "has", "is", "had", "but", "have", "with", "it", "this", "that"}))
-                .minWordFrequency(3)
-                .tokenizerFactory(t)
-                .iterate(new SentenceIterator() {
-                    private SentencePreProcessor spp = new DefaultTokenizer();
+            var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
+            IntSupplier prog = new IntSupplier() {
+                int i = 0;
 
-                    Iterator<String> iter = reader
-                            .stream()
-                            .flatMap(row -> Arrays.stream((row.getField("summary") + ". " + row.getField("text")).split("\\.")))
-                            .iterator();
+                @Override
+                public int getAsInt() {
+                    return i++;
+                }
+            };
+            TokenizerFactory t = new DefaultTokenizerFactory();
+            t.setTokenPreProcessor(new CommonPreprocessor());
+            Word2Vec word2vec = new Word2Vec.Builder()
+                    .layerSize(256)
+                    .windowSize(5)
+                    .stopWords(Arrays.asList(new String[]{"the", "a", "from", "and", "then", "to", "has", "is", "had", "but", "have", "with", "it", "this", "that"}))
+                    .minWordFrequency(3)
+                    .tokenizerFactory(t)
+                    .iterate(new SentenceIterator() {
+                        private SentencePreProcessor spp = new DefaultTokenizer();
 
-                    @Override
-                    public String nextSentence() {
-                        var s = iter.next();
-                        String pps = spp.preProcess(s);
-                        //out.println("reading string " + s.substring(0, Math.min(80, s.length())));
-                        //out.println("final string " + pps.substring(0, Math.min(80, pps.length())));
-                        int i = prog.getAsInt();
-                        if (i % 10000 == 0) {
-                            System.err.println(pps);
-                            System.err.println(i);
-                            System.err.println("===============");
-                            System.err.println(" ");
-                        }
-                        return pps + " ";
-                    }
-
-                    @Override
-                    public boolean hasNext() {
-                        return iter.hasNext();
-                    }
-
-                    @Override
-                    public void reset() {
-                        iter = reader.stream()
+                        Iterator<String> iter = reader
+                                .stream()
                                 .flatMap(row -> Arrays.stream((row.getField("summary") + ". " + row.getField("text")).split("\\.")))
                                 .iterator();
-                    }
 
-                    @Override
-                    public void finish() {
+                        @Override
+                        public String nextSentence() {
+                            var s = iter.next();
+                            String pps = spp.preProcess(s);
+                            //out.println("reading string " + s.substring(0, Math.min(80, s.length())));
+                            //out.println("final string " + pps.substring(0, Math.min(80, pps.length())));
+                            int i = prog.getAsInt();
+                            if (i % 10000 == 0) {
+                                System.err.println(pps);
+                                System.err.println(i);
+                                System.err.println("===============");
+                                System.err.println(" ");
+                            }
+                            return pps + " ";
+                        }
 
-                    }
+                        @Override
+                        public boolean hasNext() {
+                            return iter.hasNext();
+                        }
 
-                    @Override
-                    public SentencePreProcessor getPreProcessor() {
-                        return spp;
-                    }
+                        @Override
+                        public void reset() {
+                            iter = reader.stream()
+                                    .flatMap(row -> Arrays.stream((row.getField("summary") + ". " + row.getField("text")).split("\\.")))
+                                    .iterator();
+                        }
 
-                    @Override
-                    public void setPreProcessor(SentencePreProcessor spp) {
-                        this.spp = spp;
-                    }
-                }).epochs(1)
-                .build();
-        out.println("fitting word2vec.. this will take awhile..");
-        word2vec.fit();
-        out.println("dont fitting word2vec.. writing..");
-        WordVectorSerializer.writeWord2VecModel(word2vec, "word2vec.txt");
+                        @Override
+                        public void finish() {
+
+                        }
+
+                        @Override
+                        public SentencePreProcessor getPreProcessor() {
+                            return spp;
+                        }
+
+                        @Override
+                        public void setPreProcessor(SentencePreProcessor spp) {
+                            this.spp = spp;
+                        }
+                    }).epochs(1)
+                    .build();
+            out.println("fitting word2vec.. this will take awhile..");
+            word2vec.fit();
+            out.println("done fitting word2vec.. writing..");
+            WordVectorSerializer.writeWord2VecModel(word2vec, "word2vec.txt");
+        }
         ArrayList<float[]> dataList = new ArrayList<>();
-        reader.stream();
+        Word2Vec word2vec = WordVectorSerializer.readWord2Vec(new File("word2vec.txt"), true);
+        var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
+
+        DefaultTokenizer spp = new DefaultTokenizer();
+        reader.stream()
+                .map(row -> {
+                    float[] r = new float[256 + 2 + 1 + 4];
+                    System.arraycopy(
+                            word2vec.getWordVectorsMean(spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
+                                    .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toFloatVector(),
+                            0,
+                            r,
+                            0,
+                            256);
+                    return r;
+                });
     }
 
     public static void extendCSV() throws FileNotFoundException, IOException {
