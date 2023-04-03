@@ -35,12 +35,19 @@ public class Nuforc_extend {
             extendCSV();
         }
         var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
+        IntSupplier prog = new IntSupplier() {
+            int i=0;
+            @Override
+            public int getAsInt() {
+                return i++;
+            }
+        };
         TokenizerFactory t = new DefaultTokenizerFactory();
             t.setTokenPreProcessor(new CommonPreprocessor());
             Word2Vec word2vec = new Word2Vec.Builder()
                     .layerSize(128)
                     .windowSize(5)
-                    .minWordFrequency(1)
+                    .minWordFrequency(2)
                     .tokenizerFactory(t)
                     .iterate(new SentenceIterator() {
                         private SentencePreProcessor spp = new DefaultTokenizer();
@@ -55,6 +62,7 @@ public class Nuforc_extend {
                             String pps = spp.preProcess(s);
                             //out.println("reading string " + s.substring(0, Math.min(80, s.length())));
                             //out.println("final string " + pps.substring(0, Math.min(80, pps.length())));
+                            System.err.println(prog.getAsInt());
                             return pps + " ";
                         }
 
