@@ -2,19 +2,27 @@ package jae.muzzin.nuforc_extend;
 
 import de.siegmar.fastcsv.reader.NamedCsvReader;
 import de.siegmar.fastcsv.writer.CsvWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import static java.lang.System.out;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.IntSupplier;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.word2vec.Word2Vec;
+import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
+import org.deeplearning4j.text.sentenceiterator.SentencePreProcessor;
+import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor;
+import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
+import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
 
 /**
  *
@@ -23,6 +31,69 @@ import java.util.stream.IntStream;
 public class Nuforc_extend {
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
+        if(!new File("nuforce_latlong.csv").exists()) {
+            extendCSV();
+        }
+        var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
+        TokenizerFactory t = new DefaultTokenizerFactory();
+            t.setTokenPreProcessor(new CommonPreprocessor());
+            Word2Vec word2vec = new Word2Vec.Builder()
+                    .layerSize(128)
+                    .windowSize(5)
+                    .minWordFrequency(1)
+                    .tokenizerFactory(t)
+                    .iterate(new SentenceIterator() {
+                        private SentencePreProcessor spp = new DefaultTokenizer();
+
+                         Iterator<String> iter = reader
+                                 .stream()
+                                 .flatMap(row -> Arrays.stream((row.getField("summary") + ". " + row.getField("text")).split("\\.")))
+                                        .iterator();
+                        @Override
+                        public String nextSentence() {
+                            var s = iter.next();
+                            String pps = spp.preProcess(s);
+                            //out.println("reading string " + s.substring(0, Math.min(80, s.length())));
+                            //out.println("final string " + pps.substring(0, Math.min(80, pps.length())));
+                            return pps + " ";
+                        }
+
+                        @Override
+                        public boolean hasNext() {
+                            return iter.hasNext();
+                        }
+
+                        @Override
+                        public void reset() {
+                            iter = reader.stream()
+                                    .flatMap(row -> Arrays.stream((row.getField("summary") + ". " + row.getField("text")).split("\\.")))
+                                    .iterator();
+                        }
+
+                        @Override
+                        public void finish() {
+
+                        }
+
+                        @Override
+                        public SentencePreProcessor getPreProcessor() {
+                            return spp;
+                        }
+
+                        @Override
+                        public void setPreProcessor(SentencePreProcessor spp) {
+                            this.spp = spp;
+                        }
+                    }).epochs(1)
+                    .build();
+            out.println("fitting word2vec.. this will take awhile..");
+            word2vec.fit();
+            out.println("dont fitting word2vec.. writing..");
+            WordVectorSerializer.writeWord2VecModel(word2vec, "word2vec.txt");
+        ArrayList<float[]> dataList = new ArrayList<>();
+        reader.stream();
+    }
+    public static void extendCSV() throws FileNotFoundException, IOException {
         final HashMap<String, Map<String, float[]>> geocoder = new HashMap<>();
         var georeader = NamedCsvReader.builder().build(new FileReader("uscities.csv"));
         georeader.stream()
