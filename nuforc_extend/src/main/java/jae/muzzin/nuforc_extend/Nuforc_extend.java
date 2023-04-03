@@ -45,9 +45,9 @@ public class Nuforc_extend {
         TokenizerFactory t = new DefaultTokenizerFactory();
             t.setTokenPreProcessor(new CommonPreprocessor());
             Word2Vec word2vec = new Word2Vec.Builder()
-                    .layerSize(128)
+                    .layerSize(256)
                     .windowSize(5)
-                    .minWordFrequency(2)
+                    .minWordFrequency(3)
                     .tokenizerFactory(t)
                     .iterate(new SentenceIterator() {
                         private SentencePreProcessor spp = new DefaultTokenizer();
@@ -62,7 +62,8 @@ public class Nuforc_extend {
                             String pps = spp.preProcess(s);
                             //out.println("reading string " + s.substring(0, Math.min(80, s.length())));
                             //out.println("final string " + pps.substring(0, Math.min(80, pps.length())));
-                            System.err.println(prog.getAsInt());
+                            int i =prog.getAsInt();
+                            if(i%1000==0)System.err.println(pps);
                             return pps + " ";
                         }
 
