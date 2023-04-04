@@ -137,38 +137,34 @@ public class Nuforc_extend {
             };
             reader.stream()
                     .map(row -> {
-                        try {
-                            //words, lat, long, time, shape
-                            double[] r = new double[256 + 2 + 1 + shapes.length + 1];
-                            Arrays.fill(r, 0);
-                            var wordList = spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
-                                    .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList());
-                            if (!wordList.isEmpty()) {
-                                System.arraycopy(
-                                        word2vec.getWordVectorsMean(wordList).toDoubleVector(),
-                                        0,
-                                        r,
-                                        0,
-                                        256);
-                            }
-                            r[256] = Float.parseFloat(row.getField("latitude"));
-                            r[257] = Float.parseFloat(row.getField("longitude"));
-                            try {
-                                r[258] = sdf.parse(row.getField("date_time")).getTime();
-                            } catch (ParseException ex) {
-                                r[258] = 0 + (float) random.nextGaussian(0, 1e9);
-                            }
-                            for (int i = 0; i < shapes.length; i++) {
-                                r[259 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
-                            }
-                            int jae = j.getAsInt();
-                            if (jae % 100 == 0) {
-                                System.err.println("Encoded " + jae);
-                            }
-                            return r;
-                        } catch (NumberFormatException nfe) {
-                            return null;
+                        //words, lat, long, time, shape
+                        double[] r = new double[256 + 2 + 1 + shapes.length + 1];
+                        Arrays.fill(r, 0);
+                        var wordList = spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
+                                .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList());
+                        if (!wordList.isEmpty()) {
+                            System.arraycopy(
+                                    word2vec.getWordVectorsMean(wordList).toDoubleVector(),
+                                    0,
+                                    r,
+                                    0,
+                                    256);
                         }
+                        r[256] = Float.parseFloat(row.getField("latitude"));
+                        r[257] = Float.parseFloat(row.getField("longitude"));
+                        try {
+                            r[258] = sdf.parse(row.getField("date_time")).getTime();
+                        } catch (ParseException ex) {
+                            r[258] = 0 + (float) random.nextGaussian(0, 1e9);
+                        }
+                        for (int i = 0; i < shapes.length; i++) {
+                            r[259 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
+                        }
+                        int jae = j.getAsInt();
+                        if (jae % 100 == 0) {
+                            System.err.println("Encoded " + jae);
+                        }
+                        return r;
                     })
                     .filter(r -> r != null)
                     .forEach(row -> writer.writeRow(Arrays.stream(row).mapToObj(f -> "" + f).toList().toArray(new String[0])));
