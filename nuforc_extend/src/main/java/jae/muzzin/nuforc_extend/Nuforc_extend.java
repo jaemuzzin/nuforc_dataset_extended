@@ -139,13 +139,17 @@ public class Nuforc_extend {
                     .map(row -> {
                         //words, lat, long, time, shape
                         double[] r = new double[256 + 2 + 1 + shapes.length];
-                        System.arraycopy(
-                                word2vec.getWordVectorsMean(spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
-                                        .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toDoubleVector(),
-                                0,
-                                r,
-                                0,
-                                256);
+                        Arrays.fill(r, 0);
+                        var wordList = spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
+                                .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList());
+                        if (!wordList.isEmpty()) {
+                            System.arraycopy(
+                                    word2vec.getWordVectorsMean(wordList).toDoubleVector(),
+                                    0,
+                                    r,
+                                    0,
+                                    256);
+                        }
                         r[256] = Float.parseFloat(row.getField("latitude"));
                         r[257] = Float.parseFloat(row.getField("longitude"));
                         try {
