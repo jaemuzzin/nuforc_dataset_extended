@@ -138,7 +138,7 @@ public class Nuforc_extend {
             reader.stream()
                     .map(row -> {
                         //words, lat, long, time, shape
-                        double[] r = new double[256 + 2 + 1 + shapes.length];
+                        double[] r = new double[256 + 2 + 1 + shapes.length + 1];
                         Arrays.fill(r, 0);
                         var wordList = spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
                                 .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList());
