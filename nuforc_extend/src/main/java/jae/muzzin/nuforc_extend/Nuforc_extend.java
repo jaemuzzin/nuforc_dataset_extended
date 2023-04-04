@@ -8,6 +8,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import static java.lang.System.out;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,6 +17,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.IntSupplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
@@ -33,6 +37,9 @@ public class Nuforc_extend {
     public static void main(String[] args) throws FileNotFoundException, IOException {
         if (!new File("nuforce_latlong.csv").exists()) {
             extendCSV();
+        }
+        if (!new File("shapes.csv").exists()) {
+            writeShapes();
         }
         if (!new File("word2vec.txt").exists()) {
 
@@ -110,23 +117,54 @@ public class Nuforc_extend {
             out.println("done fitting word2vec.. writing..");
             WordVectorSerializer.writeWord2VecModel(word2vec, "word2vec.txt");
         }
-        ArrayList<float[]> dataList = new ArrayList<>();
-        Word2Vec word2vec = WordVectorSerializer.readWord2Vec(new File("word2vec.txt"), true);
+        if (!new File("nuforc_numeric.csv").exists()) {
+            ArrayList<float[]> dataList = new ArrayList<>();
+            Word2Vec word2vec = WordVectorSerializer.readWord2Vec(new File("word2vec.txt"), true);
+            var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
+
+            DefaultTokenizer spp = new DefaultTokenizer();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            Random random = new Random(1234);
+            String[] shapes = new String[]{"cigar", "other", "light", "circle", "triangle", "", "fireball", "oval", "disk", "unknown", "chevron", "cylinder", "diamond", "sphere", "changing", "rectangle", "formation", "egg", "star", "delta", "teardrop", "cross", "flash", "cone"};
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("nuforc_numeric.csv"));
+
+            reader.stream()
+                    .map(row -> {
+                        //words, lat, long, time, shape
+                        double[] r = new double[256 + 2 + 1 + 24];
+                        System.arraycopy(
+                                word2vec.getWordVectorsMean(spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
+                                        .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toFloatVector(),
+                                0,
+                                r,
+                                0,
+                                256);
+                        r[257] = Float.parseFloat(row.getField("latitude"));
+                        r[258] = Float.parseFloat(row.getField("longitude"));
+                        try {
+                            r[259] = sdf.parse(row.getField("date_time")).getTime();
+                        } catch (ParseException ex) {
+                            r[259] = 0 + (float) random.nextGaussian(0, 1e9);
+                        }
+                        for (int i = 0; i < shapes.length; i++) {
+                            r[260 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
+                        }
+                        return r;
+                    }).forEach(row -> writer.writeRow(Arrays.stream(row).mapToObj(f -> "" + f).toList().toArray(new String[0])));
+            writer.close();
+        }
+    }
+
+    public static void writeShapes() throws FileNotFoundException, IOException {
         var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
 
-        DefaultTokenizer spp = new DefaultTokenizer();
+        CsvWriter writer = CsvWriter.builder().build(new FileWriter("shapes.csv"));
         reader.stream()
-                .map(row -> {
-                    float[] r = new float[256 + 2 + 1 + 4];
-                    System.arraycopy(
-                            word2vec.getWordVectorsMean(spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
-                                    .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toFloatVector(),
-                            0,
-                            r,
-                            0,
-                            256);
-                    return r;
-                });
+                .map(r -> r.getField("shape").toLowerCase())
+                .distinct()
+                .forEach(shape -> writer.writeRow(shape));
+        reader.close();
+        writer.close();
     }
 
     public static void extendCSV() throws FileNotFoundException, IOException {
