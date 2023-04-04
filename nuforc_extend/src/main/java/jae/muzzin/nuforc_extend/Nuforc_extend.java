@@ -146,15 +146,15 @@ public class Nuforc_extend {
                                 r,
                                 0,
                                 256);
-                        r[257] = Float.parseFloat(row.getField("latitude"));
-                        r[258] = Float.parseFloat(row.getField("longitude"));
+                        r[256] = Float.parseFloat(row.getField("latitude"));
+                        r[257] = Float.parseFloat(row.getField("longitude"));
                         try {
-                            r[259] = sdf.parse(row.getField("date_time")).getTime();
+                            r[258] = sdf.parse(row.getField("date_time")).getTime();
                         } catch (ParseException ex) {
-                            r[259] = 0 + (float) random.nextGaussian(0, 1e9);
+                            r[258] = 0 + (float) random.nextGaussian(0, 1e9);
                         }
                         for (int i = 0; i < shapes.length; i++) {
-                            r[260 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
+                            r[259 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
                         }
                         int jae = j.getAsInt();
                         if (jae % 100 == 0) {
