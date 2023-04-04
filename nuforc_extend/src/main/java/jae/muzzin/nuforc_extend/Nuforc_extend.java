@@ -127,14 +127,21 @@ public class Nuforc_extend {
             Random random = new Random(1234);
             String[] shapes = new String[]{"cigar", "other", "light", "circle", "triangle", "", "fireball", "oval", "disk", "unknown", "chevron", "cylinder", "diamond", "sphere", "changing", "rectangle", "formation", "egg", "star", "delta", "teardrop", "cross", "flash", "cone"};
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("nuforc_numeric.csv"));
+            IntSupplier j = new IntSupplier() {
+                int j = 0;
 
+                @Override
+                public int getAsInt() {
+                    return j++;
+                }
+            };
             reader.stream()
                     .map(row -> {
                         //words, lat, long, time, shape
                         double[] r = new double[256 + 2 + 1 + 24];
                         System.arraycopy(
                                 word2vec.getWordVectorsMean(spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
-                                        .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toFloatVector(),
+                                        .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toDoubleVector(),
                                 0,
                                 r,
                                 0,
@@ -148,6 +155,10 @@ public class Nuforc_extend {
                         }
                         for (int i = 0; i < shapes.length; i++) {
                             r[260 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
+                        }
+                        int jae = j.getAsInt();
+                        if (jae % 100 == 0) {
+                            System.err.println("Encoded " + jae);
                         }
                         return r;
                     }).forEach(row -> writer.writeRow(Arrays.stream(row).mapToObj(f -> "" + f).toList().toArray(new String[0])));
