@@ -138,7 +138,7 @@ public class Nuforc_extend {
             reader.stream()
                     .map(row -> {
                         //words, lat, long, time, shape
-                        double[] r = new double[256 + 2 + 1 + 24];
+                        double[] r = new double[256 + 2 + 1 + shapes.length];
                         System.arraycopy(
                                 word2vec.getWordVectorsMean(spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
                                         .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList())).toDoubleVector(),
