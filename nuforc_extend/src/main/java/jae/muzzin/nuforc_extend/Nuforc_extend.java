@@ -119,7 +119,7 @@ public class Nuforc_extend {
         }
         if (!new File("nuforc_numeric.csv").exists()) {
             ArrayList<float[]> dataList = new ArrayList<>();
-            Word2Vec word2vec = WordVectorSerializer.readWord2Vec(new File("word2vec.txt"), true);
+            Word2Vec word2vec = WordVectorSerializer.readWord2VecModel(new File("word2vec.txt"), true);
             var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
 
             DefaultTokenizer spp = new DefaultTokenizer();
