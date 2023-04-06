@@ -158,7 +158,7 @@ public class Nuforc_extend {
                                     256);
                         }
                         r[256] = (Float.parseFloat(row.getField("latitude")) - 25) / latScale;
-                        r[257] = (Float.parseFloat(row.getField("longitude")) - 63) / longScale;
+                        r[257] = (Math.abs(Float.parseFloat(row.getField("longitude"))) - 63) / longScale;
                         try {
                             r[258] = (sdf.parse(row.getField("date_time")).getTime() - roswell47) / timeScale;
                         } catch (ParseException ex) {
