@@ -33,7 +33,7 @@ public class K_Clusterer extends ReadDataset {
         ReadDataset r1 = new ReadDataset();
         r1.getFeatures().clear();
         r1.read(csvPath); //load data
-        System.err.println("Clustering " + r1.numberOfFeatures);
+        System.err.println("Num features " + r1.numberOfFeatures);
         
         int k = numClusters;
         int distance = manhattan ? 2 : 1;
@@ -50,12 +50,10 @@ public class K_Clusterer extends ReadDataset {
         Map<Row, Integer> clusters = new HashMap<>();
         clusters = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
         // initial cluster print
-        for (Row key : clusters.keySet()) {
-            //for (int i = 0; i < key.data.length; i++) {
-            System.out.print(key.id + ", ");
-            //}
-            System.out.print(clusters.get(key) + "\n");
-        }
+        //for (Row key : clusters.keySet()) {
+        //    System.out.print(key.id + ", ");
+        //    System.out.print(clusters.get(key) + "\n");
+        //}
         double db[];
         //reassigning to new clusters
         for (int i = 0; i < max_iterations; i++) {
