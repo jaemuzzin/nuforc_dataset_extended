@@ -117,7 +117,7 @@ public class Nuforc_extend {
             out.println("done fitting word2vec.. writing..");
             WordVectorSerializer.writeWord2VecModel(word2vec, "word2vec.txt");
         }
-        if (!new File("nuforc_numeric.csv").exists() || !!new File("nuforc_numeric_sans_lnp.csv").exists()) {
+        if (!new File("nuforc_numeric.csv").exists() || !new File("nuforc_numeric_sans_nlp.csv").exists()) {
             ArrayList<float[]> dataList = new ArrayList<>();
             Word2Vec word2vec = WordVectorSerializer.readWord2VecModel(new File("word2vec.txt"), true);
             var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
