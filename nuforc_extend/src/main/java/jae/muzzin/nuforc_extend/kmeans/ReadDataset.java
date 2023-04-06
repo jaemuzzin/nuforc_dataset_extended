@@ -20,7 +20,7 @@ public class ReadDataset {
 	
 	protected List<double[]> features=new ArrayList<>();
 	protected List<String> label=new ArrayList<>();
-	protected static int numberOfFeatures;
+	public int numberOfFeatures;
 	
 	public List<double[]> getFeatures()
 	{

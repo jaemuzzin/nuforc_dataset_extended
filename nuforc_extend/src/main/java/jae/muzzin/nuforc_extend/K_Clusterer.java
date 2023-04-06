@@ -33,12 +33,14 @@ public class K_Clusterer extends ReadDataset {
         ReadDataset r1 = new ReadDataset();
         r1.getFeatures().clear();
         r1.read(csvPath); //load data
+        System.err.println("Clustering " + r1.numberOfFeatures);
+        
         int k = numClusters;
         int distance = manhattan ? 2 : 1;
         //Hashmap to store centroids with index
         Map<Integer, double[]> centroids = new HashMap<>();
         // calculating initial centroids
-        double[] x1 = new double[numberOfFeatures];
+        double[] x1;
         int r = 0;
         for (int i = 0; i < k; i++) {
             x1 = r1.getFeatures().get(r++);
@@ -54,7 +56,7 @@ public class K_Clusterer extends ReadDataset {
             //}
             System.out.print(clusters.get(key) + "\n");
         }
-        double db[] = new double[numberOfFeatures];
+        double db[];
         //reassigning to new clusters
         for (int i = 0; i < max_iterations; i++) {
             for (int j = 0; j < k; j++) {
@@ -64,7 +66,7 @@ public class K_Clusterer extends ReadDataset {
                         list.add(key.data);
                     }
                 }
-                db = centroidCalculator(list);
+                db = centroidCalculator(list, r1.numberOfFeatures);
                 centroids.put(j, db);
 
             }
@@ -102,13 +104,13 @@ public class K_Clusterer extends ReadDataset {
     }
 
     //method to calculate centroids
-    public static double[] centroidCalculator(List<double[]> a) {
+    public static double[] centroidCalculator(List<double[]> a, int numFeatures) {
 
         int count = 0;
         //double x[] = new double[ReadDataset.numberOfFeatures];
         double sum = 0.0;
-        double[] centroids = new double[ReadDataset.numberOfFeatures];
-        for (int i = 0; i < ReadDataset.numberOfFeatures; i++) {
+        double[] centroids = new double[numFeatures];
+        for (int i = 0; i < numFeatures; i++) {
             sum = 0.0;
             count = 0;
             for (double[] x : a) {
