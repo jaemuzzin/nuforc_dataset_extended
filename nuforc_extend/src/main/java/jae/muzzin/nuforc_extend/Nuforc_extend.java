@@ -128,6 +128,7 @@ public class Nuforc_extend {
             String[] shapes = new String[]{"cigar", "other", "light", "circle", "triangle", "", "fireball", "oval", "disk", "unknown", "chevron", "cylinder", "diamond", "sphere", "changing", "rectangle", "formation", "egg", "star", "delta", "teardrop", "cross", "flash", "cone"};
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("nuforc_numeric.csv"));
             CsvWriter writerSansNLP = CsvWriter.builder().build(new FileWriter("nuforc_numeric_sans_nlp.csv"));
+            writerSansNLP.writeRow("lat", "long", "datetime", "cigar", "other", "light", "circle", "triangle", "", "fireball", "oval", "disk", "unknown", "chevron", "cylinder", "diamond", "sphere", "changing", "rectangle", "formation", "egg", "star", "delta", "teardrop", "cross", "flash", "cone", "id");
             IntSupplier j = new IntSupplier() {
                 int j = 0;
 
@@ -171,6 +172,16 @@ public class Nuforc_extend {
                     .filter(r -> r != null)
                     .peek(row -> writerSansNLP.writeRow(Arrays.stream(row).skip(256).mapToObj(f -> "" + f).toList().toArray(new String[0])))
                     .forEach(row -> writer.writeRow(Arrays.stream(row).mapToObj(f -> "" + f).toList().toArray(new String[0])));
+            writer.close();
+            writerSansNLP.close();
+        }
+        if (!new File("kmeans_summary.csv").exists()) {
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
+            writer.writeRow("clusters", "wcss");
+            for (int k = 3000; k < 1000; k += 10) {
+                var r = K_Clusterer.cluster(k, "nuforc_numeric_sans_nlp", false, 100);
+                writer.writeRow("" + k, "" + r.wcss);
+            }
             writer.close();
         }
     }
