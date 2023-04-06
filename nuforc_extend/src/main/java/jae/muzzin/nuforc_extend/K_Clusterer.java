@@ -11,17 +11,18 @@ import jae.muzzin.nuforc_extend.kmeans.Row;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 public class K_Clusterer extends ReadDataset {
 
     public static class ReturnValue {
 
-        public ReturnValue(Map<Integer, Integer> idToCluster, double wcss) {
+        public ReturnValue(Map<Long, Integer> idToCluster, double wcss) {
             this.idToCluster = idToCluster;
             this.wcss = wcss;
         }
 
-        public Map<Integer, Integer> idToCluster;
+        public Map<Long, Integer> idToCluster;
         public double wcss;
     }
 
@@ -63,15 +64,14 @@ public class K_Clusterer extends ReadDataset {
                 }
                 db = centroidCalculator(list, r1.numberOfFeatures);
                 centroids.put(j, db);
-
             }
             clusters.clear();
             clusters = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
         }
         System.err.println(".");
-        HashMap<Integer, Integer> idToCluster = new HashMap<>();
+        HashMap<Long, Integer> idToCluster = new HashMap<>();
         for (Row key : clusters.keySet()) {
-            idToCluster.put(Integer.parseInt(key.id), clusters.get(key));
+            idToCluster.put((long)Float.parseFloat(key.id), clusters.get(key));
         }
         //System.out.println("Centroids:");
         for (double[] centroid : centroids.values()) {
@@ -117,25 +117,27 @@ public class K_Clusterer extends ReadDataset {
     //method for putting features to clusters and reassignment of clusters.
     public static Map<Row, Integer> kmeans(List<double[]> features, List<String> labels, int distance, Map<Integer, double[]> centroids, int k) {
         Map<Row, Integer> clusters = new HashMap<>();
-        int k1 = 0;
-        double dist = 0.0;
-        for (int i = 0; i < features.size(); i++) {
-            double[] x = features.get(i);
-            double minimum = 999999.0;
-            for (int j = 0; j < k; j++) {
-                if (distance == 1) {
-                    dist = Distance.eucledianDistance(centroids.get(j), x);
-                } else if (distance == 2) {
-                    dist = Distance.manhattanDistance(centroids.get(j), x);
-                }
-                if (dist < minimum) {
-                    minimum = dist;
-                    k1 = j;
-                }
 
+        class IdToDist {
+
+            public IdToDist(int id, double dist) {
+                this.id = id;
+                this.dist = dist;
             }
-            clusters.put(new Row(features.get(i), labels.get(i)), k1);
-        }
+
+            int id;
+            double dist;
+        };
+        IntStream.range(0, features.size())
+                .parallel()
+                .forEach(i -> {
+                    var x = features.get(i);
+                    int k1 = IntStream.range(0, k)
+                            .mapToObj(j -> new IdToDist(j, Distance.eucledianDistance(centroids.get(j), x)))
+                            .sorted((z, y) -> new Double(z.dist).compareTo(new Double(y.dist)))
+                            .findFirst().orElseThrow().id;
+                    clusters.put(new Row(x, labels.get(i)), k1);
+                });
 
         return clusters;
     }
