@@ -10,6 +10,7 @@ import jae.muzzin.nuforc_extend.kmeans.ReadDataset;
 import jae.muzzin.nuforc_extend.kmeans.Row;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
@@ -40,7 +41,7 @@ public class K_Clusterer extends ReadDataset {
         int k = numClusters;
         int distance = manhattan ? 2 : 1;
         //Hashmap to store centroids with index
-        Map<Integer, double[]> centroids = new HashMap<>();
+        Map<Integer, double[]> centroids = new ConcurrentHashMap<>();
         // calculating initial centroids
         double[] x1;
         int r = 0;
@@ -48,25 +49,23 @@ public class K_Clusterer extends ReadDataset {
             x1 = r1.getFeatures().get(r++);
             centroids.put(i, x1);
         }
-        //Hashmap for finding cluster indexes
-        Map<Row, Integer> clusters = new HashMap<>();
-        clusters = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
-        double db[];
         //reassigning to new clusters
+        Map<Row, Integer> clusters = new HashMap<>();
         for (int i = 0; i < max_iterations; i++) {
             System.err.print(".");
-            for (int j = 0; j < k; j++) {
-                List<double[]> list = new ArrayList<>();
-                for (Row key : clusters.keySet()) {
-                    if (clusters.get(key) == j) {
-                        list.add(key.data);
-                    }
-                }
-                db = centroidCalculator(list, r1.numberOfFeatures);
-                centroids.put(j, db);
-            }
-            clusters.clear();
-            clusters = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
+            var clustersIter = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
+            IntStream.range(0,k)
+                    .parallel()
+                    .forEach(j -> {
+                        List<double[]> list = new ArrayList<>();
+                        for (Row key : clustersIter.keySet()) {
+                            if (clustersIter.get(key) == j) {
+                                list.add(key.data);
+                            }
+                        }
+                        centroids.put(j, centroidCalculator(list, r1.numberOfFeatures));
+                    });
+            clusters = clustersIter;
         }
         System.err.println(".");
         HashMap<Long, Integer> idToCluster = new HashMap<>();
@@ -116,7 +115,7 @@ public class K_Clusterer extends ReadDataset {
 
     //method for putting features to clusters and reassignment of clusters.
     public static Map<Row, Integer> kmeans(List<double[]> features, List<String> labels, int distance, Map<Integer, double[]> centroids, int k) {
-        Map<Row, Integer> clusters = new HashMap<>();
+        Map<Row, Integer> clusters = new ConcurrentHashMap<>();
 
         class IdToDist {
 
