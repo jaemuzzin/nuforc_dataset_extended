@@ -117,7 +117,7 @@ public class Nuforc_extend {
             out.println("done fitting word2vec.. writing..");
             WordVectorSerializer.writeWord2VecModel(word2vec, "word2vec.txt");
         }
-        if (!new File("nuforc_numeric.csv").exists()) {
+        if (!new File("nuforc_numeric.csv").exists() || !!new File("nuforc_numeric_sans_lnp.csv").exists()) {
             ArrayList<float[]> dataList = new ArrayList<>();
             Word2Vec word2vec = WordVectorSerializer.readWord2VecModel(new File("word2vec.txt"), true);
             var reader = NamedCsvReader.builder().build(new FileReader("nuforc_latlong.csv"));
@@ -127,6 +127,7 @@ public class Nuforc_extend {
             Random random = new Random(1234);
             String[] shapes = new String[]{"cigar", "other", "light", "circle", "triangle", "", "fireball", "oval", "disk", "unknown", "chevron", "cylinder", "diamond", "sphere", "changing", "rectangle", "formation", "egg", "star", "delta", "teardrop", "cross", "flash", "cone"};
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("nuforc_numeric.csv"));
+            CsvWriter writerSansNLP = CsvWriter.builder().build(new FileWriter("nuforc_numeric_sans_nlp.csv"));
             IntSupplier j = new IntSupplier() {
                 int j = 0;
 
@@ -137,7 +138,7 @@ public class Nuforc_extend {
             };
             reader.stream()
                     .map(row -> {
-                        //words, lat, long, time, shape
+                        //words, lat, long, time, shape, id
                         double[] r = new double[256 + 2 + 1 + shapes.length + 1];
                         Arrays.fill(r, 0);
                         var wordList = spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
@@ -160,6 +161,7 @@ public class Nuforc_extend {
                         for (int i = 0; i < shapes.length; i++) {
                             r[259 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
                         }
+                        r[r.length - 1] = Float.parseFloat(row.getField("index"));
                         int jae = j.getAsInt();
                         if (jae % 100 == 0) {
                             System.err.println("Encoded " + jae);
@@ -167,6 +169,7 @@ public class Nuforc_extend {
                         return r;
                     })
                     .filter(r -> r != null)
+                    .peek(row -> writerSansNLP.writeRow(Arrays.stream(row).skip(256).mapToObj(f -> "" + f).toList().toArray(new String[0])))
                     .forEach(row -> writer.writeRow(Arrays.stream(row).mapToObj(f -> "" + f).toList().toArray(new String[0])));
             writer.close();
         }
