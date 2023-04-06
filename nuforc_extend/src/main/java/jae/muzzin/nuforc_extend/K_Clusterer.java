@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class K_Clusterer extends ReadDataset {
 
-    static class ReturnValue{
+    public static class ReturnValue{
 
         public ReturnValue(Map<Integer, Integer> idToCluster, double wcss) {
             this.idToCluster = idToCluster;
@@ -29,6 +29,7 @@ public class K_Clusterer extends ReadDataset {
     }
 
     public static ReturnValue cluster(int numClusters, String csvPath, boolean manhattan, int max_iterations) throws IOException {
+        System.err.println("Clustering " + numClusters);
         ReadDataset r1 = new ReadDataset();
         r1.getFeatures().clear();
         r1.read(csvPath); //load data

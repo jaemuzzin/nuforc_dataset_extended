@@ -178,8 +178,8 @@ public class Nuforc_extend {
         if (!new File("kmeans_summary.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
             writer.writeRow("clusters", "wcss");
-            for (int k = 3000; k < 1000; k += 10) {
-                var r = K_Clusterer.cluster(k, "nuforc_numeric_sans_nlp", false, 100);
+            for (int k = 3000; k < 10000; k += 10) {
+                var r = K_Clusterer.cluster(k, "nuforc_numeric_sans_nlp.csv", false, 100);
                 writer.writeRow("" + k, "" + r.wcss);
             }
             writer.close();
