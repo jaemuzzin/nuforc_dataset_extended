@@ -90,7 +90,7 @@ public class K_Clusterer extends ReadDataset {
             }
             wcss += sse;
         }
-        return new ReturnValue(idToCluster, wcss);
+        return new ReturnValue(idToCluster, wcss/numClusters);
     }
 
     //method to calculate centroids

@@ -180,7 +180,7 @@ public class Nuforc_extend {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
             writer.writeRow("clusters", "wcss");
             for (int k = 10000; k < 30000; k += 1000) {
-                var r = K_Clusterer.cluster(k, "nuforc_numeric_sans_nlp.csv", false, 20);
+                var r = K_Clusterer.cluster(k, "nuforc_numeric_sans_nlp.csv", true, 20);
                 System.err.println("" + k + ", " + "" + r.wcss);
                 writer.writeRow("" + k, "" + r.wcss);
             }
@@ -190,7 +190,7 @@ public class Nuforc_extend {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary_nlp.csv"));
             writer.writeRow("clusters", "wcss");
             for (int k = 10000; k < 30000; k += 1000) {
-                var r = K_Clusterer.cluster(k, "nuforc_numeric.csv", false, 20);
+                var r = K_Clusterer.cluster(k, "nuforc_numeric.csv", true, 20);
                 System.err.println("" + k + ", " + "" + r.wcss);
                 writer.writeRow("" + k, "" + r.wcss);
             }
