@@ -14,16 +14,17 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class K_Clusterer extends ReadDataset {
 
-    public static class ReturnValue{
+    public static class ReturnValue {
 
         public ReturnValue(Map<Integer, Integer> idToCluster, double wcss) {
             this.idToCluster = idToCluster;
             this.wcss = wcss;
         }
-        
+
         public Map<Integer, Integer> idToCluster;
         public double wcss;
     }
+
     public K_Clusterer() {
         // TODO Auto-generated constructor stub
     }
@@ -34,7 +35,7 @@ public class K_Clusterer extends ReadDataset {
         r1.getFeatures().clear();
         r1.read(csvPath); //load data
         System.err.println("Num features " + r1.numberOfFeatures);
-        
+
         int k = numClusters;
         int distance = manhattan ? 2 : 1;
         //Hashmap to store centroids with index
@@ -49,14 +50,10 @@ public class K_Clusterer extends ReadDataset {
         //Hashmap for finding cluster indexes
         Map<Row, Integer> clusters = new HashMap<>();
         clusters = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
-        // initial cluster print
-        //for (Row key : clusters.keySet()) {
-        //    System.out.print(key.id + ", ");
-        //    System.out.print(clusters.get(key) + "\n");
-        //}
         double db[];
         //reassigning to new clusters
         for (int i = 0; i < max_iterations; i++) {
+            System.err.print(".");
             for (int j = 0; j < k; j++) {
                 List<double[]> list = new ArrayList<>();
                 for (Row key : clusters.keySet()) {
@@ -70,12 +67,8 @@ public class K_Clusterer extends ReadDataset {
             }
             clusters.clear();
             clusters = kmeans(r1.getFeatures(), r1.getLabel(), distance, centroids, k);
-
         }
-
-        //final cluster print
-        System.out.println("\nFinal Clustering of Data");
-        System.out.println("Feature1\tFeature2\tFeature3\tFeature4\tCluster");
+        System.err.println(".");
         HashMap<Integer, Integer> idToCluster = new HashMap<>();
         for (Row key : clusters.keySet()) {
             idToCluster.put(Integer.parseInt(key.id), clusters.get(key));
