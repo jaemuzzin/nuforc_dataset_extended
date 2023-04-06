@@ -34,7 +34,7 @@ import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
  */
 public class Nuforc_extend {
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
         if (!new File("nuforce_latlong.csv").exists()) {
             extendCSV();
         }
@@ -137,6 +137,11 @@ public class Nuforc_extend {
                     return j++;
                 }
             };
+            long roswell47 = sdf.parse("1947-01-01 00:00").getTime();
+            long now = sdf.parse("2024-01-01 00:00").getTime();
+            float timeScale = now - roswell47;
+            float latScale = 55 - 25;
+            float longScale = 123 - 63;
             reader.stream()
                     .map(row -> {
                         //words, lat, long, time, shape, id
@@ -152,12 +157,12 @@ public class Nuforc_extend {
                                     0,
                                     256);
                         }
-                        r[256] = Float.parseFloat(row.getField("latitude"));
-                        r[257] = Float.parseFloat(row.getField("longitude"));
+                        r[256] = (Float.parseFloat(row.getField("latitude")) - 25) / latScale;
+                        r[257] = (Float.parseFloat(row.getField("longitude")) - 63) / longScale;
                         try {
-                            r[258] = sdf.parse(row.getField("date_time")).getTime();
+                            r[258] = (sdf.parse(row.getField("date_time")).getTime() - roswell47) / timeScale;
                         } catch (ParseException ex) {
-                            r[258] = 0 + (float) random.nextGaussian(0, 1e9);
+                            r[258] = 0 + (float) random.nextFloat();
                         }
                         for (int i = 0; i < shapes.length; i++) {
                             r[259 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
