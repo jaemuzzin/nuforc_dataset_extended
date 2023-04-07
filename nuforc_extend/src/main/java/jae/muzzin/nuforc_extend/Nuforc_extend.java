@@ -147,7 +147,7 @@ public class Nuforc_extend {
                         //words, lat, long, time, shape, id
                         double[] r = new double[256 + 2 + 1 + shapes.length + 1];
                         Arrays.fill(r, 0);
-                        var wordList = spp.tokenize(row.getField("summary") + ". " + row.getField("text"))
+                        var wordList = spp.tokenize(row.getField("summary"))
                                 .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList());
                         if (!wordList.isEmpty()) {
                             System.arraycopy(
@@ -193,12 +193,12 @@ public class Nuforc_extend {
         }
         if (!new File("kmeans_16k_clusters.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_16k_clusters.csv"));
-            writer.writeRow("clusters", "wcss");
+            writer.writeRow("id", "cluster");
             var r = K_Clusterer.cluster(16000, "nuforc_numeric_sans_nlp.csv", true, 50);
             r.idToCluster
                 .entrySet()
                 .stream()
-                .forEach(e -> writer.writeRow(e.getKey()+ ", " + e.getValue()));
+                .forEach(e -> writer.writeRow(""+e.getKey(), ""+e.getValue()));
             writer.close();
         }
         if (!new File("kmeans_summary_nlp.csv").exists()) {
