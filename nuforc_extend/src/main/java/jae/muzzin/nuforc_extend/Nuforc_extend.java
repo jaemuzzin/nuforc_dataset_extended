@@ -231,7 +231,7 @@ public class Nuforc_extend {
                         }
                     }
                     )
-                    .sequential()
+                    //.sequential()
                     .sorted((x, y) -> new Double(y[1]).compareTo(new Double(x[1])))
                     .forEach(r -> writer.writeRow("" + ((int) r[0]), "" + r[1]));
             System.err.println(".");
