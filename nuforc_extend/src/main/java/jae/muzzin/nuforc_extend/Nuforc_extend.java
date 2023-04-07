@@ -33,7 +33,7 @@ import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
  * @author Admin
  */
 public class Nuforc_extend {
-
+    public static final int WORD_EMBEDDING_DIMS = 128;
     public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
         if (!new File("nuforce_latlong.csv").exists()) {
             extendCSV();
@@ -55,7 +55,7 @@ public class Nuforc_extend {
             TokenizerFactory t = new DefaultTokenizerFactory();
             t.setTokenPreProcessor(new CommonPreprocessor());
             Word2Vec word2vec = new Word2Vec.Builder()
-                    .layerSize(256)
+                    .layerSize(WORD_EMBEDDING_DIMS)
                     .windowSize(5)
                     .stopWords(Arrays.asList(new String[]{"the", "a", "from", "and", "then", "to", "has", "is", "had", "but", "have", "with", "it", "this", "that"}))
                     .minWordFrequency(3)
@@ -145,7 +145,7 @@ public class Nuforc_extend {
             reader.stream()
                     .map(row -> {
                         //words, lat, long, time, shape, id
-                        double[] r = new double[256 + 2 + 1 + shapes.length + 1];
+                        double[] r = new double[WORD_EMBEDDING_DIMS + 2 + 1 + shapes.length + 1];
                         Arrays.fill(r, 0);
                         var wordList = spp.tokenize(row.getField("summary"))
                                 .stream().filter(w -> word2vec.hasWord(w)).collect(Collectors.toList());
@@ -155,17 +155,17 @@ public class Nuforc_extend {
                                     0,
                                     r,
                                     0,
-                                    256);
+                                    WORD_EMBEDDING_DIMS);
                         }
-                        r[256] = (Float.parseFloat(row.getField("latitude")) - 25) / latScale;
-                        r[257] = (Math.abs(Float.parseFloat(row.getField("longitude"))) - 63) / longScale;
+                        r[WORD_EMBEDDING_DIMS] = (Float.parseFloat(row.getField("latitude")) - 25) / latScale;
+                        r[WORD_EMBEDDING_DIMS + 1] = (Math.abs(Float.parseFloat(row.getField("longitude"))) - 63) / longScale;
                         try {
-                            r[258] = (sdf.parse(row.getField("date_time")).getTime() - roswell47) / timeScale;
+                            r[WORD_EMBEDDING_DIMS + 2] = (sdf.parse(row.getField("date_time")).getTime() - roswell47) / timeScale;
                         } catch (ParseException ex) {
-                            r[258] = 0 + (float) random.nextFloat();
+                            r[WORD_EMBEDDING_DIMS + 2] = 0 + (float) random.nextFloat();
                         }
                         for (int i = 0; i < shapes.length; i++) {
-                            r[259 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
+                            r[WORD_EMBEDDING_DIMS + 3 + i] = row.getField("shape").toLowerCase().equals(shapes[i]) ? 1 : 0;
                         }
                         r[r.length - 1] = Float.parseFloat(row.getField("index"));
                         int jae = j.getAsInt();
@@ -175,7 +175,7 @@ public class Nuforc_extend {
                         return r;
                     })
                     .filter(r -> r != null)
-                    .peek(row -> writerSansNLP.writeRow(Arrays.stream(row).skip(256).mapToObj(f -> "" + f).toList().toArray(new String[0])))
+                    .peek(row -> writerSansNLP.writeRow(Arrays.stream(row).skip(WORD_EMBEDDING_DIMS).mapToObj(f -> "" + f).toList().toArray(new String[0])))
                     .forEach(row -> writer.writeRow(Arrays.stream(row).mapToObj(f -> "" + f).toList().toArray(new String[0])));
             writer.close();
             writerSansNLP.close();
