@@ -220,7 +220,7 @@ public class Nuforc_extend {
                                                     .limit(row.getFieldCount() - 1)
                                                     .mapToDouble(s -> Double.parseDouble(s))
                                                     .toArray())
-                                    ).map(innerArr -> Nd4j.math.abs(innerArr.sub(outerArr)).sumNumber().doubleValue())
+                                    ).map(innerArr -> Nd4j.math.sqrt(Nd4j.math.pow(innerArr.sub(outerArr), 2).sum()).sumNumber().doubleValue())
                                     .sorted()
                                     .skip(2)
                                     .limit(1)
