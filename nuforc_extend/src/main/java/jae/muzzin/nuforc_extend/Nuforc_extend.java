@@ -191,6 +191,16 @@ public class Nuforc_extend {
             }
             writer.close();
         }
+        if (!new File("kmeans_16k_clusters.csv").exists()) {
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_16k_clusters.csv"));
+            writer.writeRow("clusters", "wcss");
+            var r = K_Clusterer.cluster(16000, "nuforc_numeric_sans_nlp.csv", true, 50);
+            r.idToCluster
+                .entrySet()
+                .stream()
+                .forEach(e -> writer.writeRow(e.getKey()+ ", " + e.getValue()));
+            writer.close();
+        }
         if (!new File("kmeans_summary_nlp.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary_nlp.csv"));
             writer.writeRow("clusters", "wcss");
