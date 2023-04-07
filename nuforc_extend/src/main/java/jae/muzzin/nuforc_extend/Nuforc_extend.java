@@ -197,6 +197,7 @@ public class Nuforc_extend {
             var readerOuter = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
             readerOuter.
                     stream()
+                    .peek(r -> System.err.print("."))
                     .map(row -> {
                         var outerArr = Nd4j.create(row
                                 .getFields()
@@ -229,6 +230,8 @@ public class Nuforc_extend {
                     )
                     .sorted((x, y) -> new Double(y[1]).compareTo(new Double(x[1])))
                     .forEach(r -> writer.writeRow("" + ((int) r[0]), "" + r[1]));
+            System.err.println(".");
+            writer.close();
         }
         if (!new File("dbscan.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
