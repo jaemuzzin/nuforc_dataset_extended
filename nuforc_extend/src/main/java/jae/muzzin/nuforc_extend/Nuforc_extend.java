@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.IntSupplier;
@@ -31,13 +32,16 @@ import org.deeplearning4j.text.sentenceiterator.SentencePreProcessor;
 import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
+import org.nd4j.linalg.factory.Nd4j;
 
 /**
  *
  * @author Admin
  */
 public class Nuforc_extend {
+
     public static final int WORD_EMBEDDING_DIMS = 128;
+
     public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
         if (!new File("nuforce_latlong.csv").exists()) {
             extendCSV();
@@ -161,7 +165,7 @@ public class Nuforc_extend {
                                     0,
                                     WORD_EMBEDDING_DIMS);
                         }
-                        for (int i=0;i<WORD_EMBEDDING_DIMS;i++){
+                        for (int i = 0; i < WORD_EMBEDDING_DIMS; i++) {
                             r[i] *= 0.19f; //scale it down so attributes and nlp data have comparable effect on distance calculations
                         }
                         r[WORD_EMBEDDING_DIMS] = (Float.parseFloat(row.getField("latitude")) - 25) / latScale;
@@ -187,11 +191,49 @@ public class Nuforc_extend {
             writer.close();
             writerSansNLP.close();
         }
-        
+
+        if (!new File("3rd-nn-dist.csv").exists()) {
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("3rd-nn-dist.csv"));
+            var readerOuter = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
+            readerOuter.
+                    stream()
+                    .map(row -> {
+                        var outerArr = Nd4j.create(row
+                                .getFields()
+                                .stream()
+                                .limit(row.getFieldCount() - 1)
+                                .mapToDouble(s -> Double.parseDouble(s))
+                                .toArray());
+                        try {
+                            var readerInner = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
+                            double thirdNeighDist = readerInner
+                                    .stream()
+                                    .map(rowInner
+                                            -> Nd4j.create(
+                                            rowInner.getFields()
+                                                    .stream()
+                                                    .limit(row.getFieldCount() - 1)
+                                                    .mapToDouble(s -> Double.parseDouble(s))
+                                                    .toArray())
+                                    ).map(innerArr -> Nd4j.math.abs(innerArr.sub(outerArr)).sumNumber().doubleValue())
+                                    .sorted()
+                                    .skip(2)
+                                    .limit(1)
+                                    .findAny().orElse(0d);
+                            return new double[]{Double.parseDouble(row.getField(row.getFieldCount() - 1)), thirdNeighDist};
+                        } catch (FileNotFoundException ex) {
+                            Logger.getLogger(Nuforc_extend.class.getName()).log(Level.SEVERE, null, ex);
+                            return new double[]{0, 0};
+                        }
+                    }
+                    )
+                    .sorted((x, y) -> new Double(y[1]).compareTo(new Double(x[1])))
+                    .forEach(r -> writer.writeRow("" + ((int) r[0]), "" + r[1]));
+        }
         if (!new File("dbscan.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
             writer.writeRow("id", "cluster");
-            
+
             var reader = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
             var data = reader.stream().map(r -> r.getFields().stream().mapToDouble(s -> Double.parseDouble(s)).toArray())
                     .toList();
@@ -200,12 +242,12 @@ public class Nuforc_extend {
                     @Override
                     public double calculateDistance(double[] val1, double[] val2) throws DBSCANClusteringException {
                         double d = 0;
-                        for(int i=0;i<val1.length;i++){
+                        for (int i = 0; i < val1.length; i++) {
                             d += Math.abs(val1[i] - val2[i]);
                         }
                         return d;
                     }
-                    
+
                 });
                 var dbscanResult = dbscan.performClustering();
             } catch (DBSCANClusteringException ex) {
@@ -228,9 +270,9 @@ public class Nuforc_extend {
             writer.writeRow("id", "cluster");
             var r = K_Clusterer.cluster(16000, "nuforc_numeric_sans_nlp.csv", true, 50);
             r.idToCluster
-                .entrySet()
-                .stream()
-                .forEach(e -> writer.writeRow(""+e.getKey(), ""+e.getValue()));
+                    .entrySet()
+                    .stream()
+                    .forEach(e -> writer.writeRow("" + e.getKey(), "" + e.getValue()));
             writer.close();
         }
         if (!new File("kmeans_summary_nlp.csv").exists()) {
