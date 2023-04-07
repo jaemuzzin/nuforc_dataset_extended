@@ -1,5 +1,6 @@
 package jae.muzzin.nuforc_extend;
 
+import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.NamedCsvReader;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import java.io.File;
@@ -20,6 +21,9 @@ import java.util.function.IntSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.christopherfrantz.dbscan.DBSCANClusterer;
+import org.christopherfrantz.dbscan.DBSCANClusteringException;
+import org.christopherfrantz.dbscan.DistanceMetric;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
@@ -184,6 +188,31 @@ public class Nuforc_extend {
             writerSansNLP.close();
         }
         
+        if (!new File("dbscan.csv").exists()) {
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
+            writer.writeRow("id", "cluster");
+            
+            var reader = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
+            var data = reader.stream().map(r -> r.getFields().stream().mapToDouble(s -> Double.parseDouble(s)).toArray())
+                    .toList();
+            try {
+                DBSCANClusterer<double[]> dbscan = new DBSCANClusterer<>(data, 3, .1, new DistanceMetric<double[]>() {
+                    @Override
+                    public double calculateDistance(double[] val1, double[] val2) throws DBSCANClusteringException {
+                        double d = 0;
+                        for(int i=0;i<val1.length;i++){
+                            d += Math.abs(val1[i] - val2[i]);
+                        }
+                        return d;
+                    }
+                    
+                });
+                var dbscanResult = dbscan.performClustering();
+            } catch (DBSCANClusteringException ex) {
+                Logger.getLogger(Nuforc_extend.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            writer.close();
+        }
         if (!new File("kmeans_summary.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
             writer.writeRow("clusters", "wcss");
