@@ -224,7 +224,7 @@ public class Nuforc_extend {
                                     .sorted()
                                     .skip(2)
                                     .limit(1)
-                                    .findAny().orElse(0d);
+                                    .findFirst().orElse(0d);
                             return new double[]{Double.parseDouble(row.getField(row.getFieldCount() - 1)), thirdNeighDist};
                         } catch (FileNotFoundException ex) {
                             Logger.getLogger(Nuforc_extend.class.getName()).log(Level.SEVERE, null, ex);
