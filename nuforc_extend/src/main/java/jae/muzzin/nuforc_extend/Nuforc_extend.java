@@ -157,6 +157,9 @@ public class Nuforc_extend {
                                     0,
                                     WORD_EMBEDDING_DIMS);
                         }
+                        for (int i=0;i<WORD_EMBEDDING_DIMS;i++){
+                            r[i] *= 0.19f; //scale it down so attributes and nlp data have comparable effect on distance calculations
+                        }
                         r[WORD_EMBEDDING_DIMS] = (Float.parseFloat(row.getField("latitude")) - 25) / latScale;
                         r[WORD_EMBEDDING_DIMS + 1] = (Math.abs(Float.parseFloat(row.getField("longitude"))) - 63) / longScale;
                         try {
