@@ -199,7 +199,7 @@ public class Nuforc_extend {
                     stream()
                     .limit(10000)
                     .peek(r -> System.err.print("."))
-                    .parallel()
+                    //.parallel()
                     .map(row -> {
                         var outerArr = Nd4j.create(row
                                 .getFields()
@@ -212,6 +212,7 @@ public class Nuforc_extend {
                             double thirdNeighDist = readerInner
                                     .stream()
                                     .limit(10000)
+                                    .parallel()
                                     .map(rowInner
                                             -> Nd4j.create(
                                             rowInner.getFields()
