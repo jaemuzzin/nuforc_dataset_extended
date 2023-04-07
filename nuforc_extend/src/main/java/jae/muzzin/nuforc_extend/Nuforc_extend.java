@@ -197,6 +197,7 @@ public class Nuforc_extend {
             var readerOuter = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
             readerOuter.
                     stream()
+                    .limit(10000)
                     .peek(r -> System.err.print("."))
                     .map(row -> {
                         var outerArr = Nd4j.create(row
@@ -209,6 +210,7 @@ public class Nuforc_extend {
                             var readerInner = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
                             double thirdNeighDist = readerInner
                                     .stream()
+                                    .limit(10000)
                                     .map(rowInner
                                             -> Nd4j.create(
                                             rowInner.getFields()
