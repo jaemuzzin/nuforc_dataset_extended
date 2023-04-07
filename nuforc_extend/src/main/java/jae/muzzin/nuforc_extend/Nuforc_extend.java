@@ -199,6 +199,7 @@ public class Nuforc_extend {
                     stream()
                     .limit(10000)
                     .peek(r -> System.err.print("."))
+                    .parallel()
                     .map(row -> {
                         var outerArr = Nd4j.create(row
                                 .getFields()
@@ -230,6 +231,7 @@ public class Nuforc_extend {
                         }
                     }
                     )
+                    .sequential()
                     .sorted((x, y) -> new Double(y[1]).compareTo(new Double(x[1])))
                     .forEach(r -> writer.writeRow("" + ((int) r[0]), "" + r[1]));
             System.err.println(".");
