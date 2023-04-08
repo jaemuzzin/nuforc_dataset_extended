@@ -32,6 +32,8 @@ import org.deeplearning4j.text.sentenceiterator.SentencePreProcessor;
 import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 /**
@@ -243,19 +245,13 @@ public class Nuforc_extend {
             writer.writeRow("id", "cluster");
 
             var reader = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
-            var data = reader.stream().map(r -> r.getFields().stream().mapToDouble(s -> Double.parseDouble(s)).toArray())
+            var data = reader.stream().map(r -> Nd4j.create(r.getFields().stream().mapToDouble(s -> Double.parseDouble(s)).toArray()))
                     .toList();
+            var mask = Nd4j.ones(DataType.DOUBLE, data.get(0).shape()[0]);
+            mask.putScalar(mask.shape()[0], 0d);
             try {
-                DBSCANClusterer<double[]> dbscan = new DBSCANClusterer<>(data, 3, .1, new DistanceMetric<double[]>() {
-                    @Override
-                    public double calculateDistance(double[] val1, double[] val2) throws DBSCANClusteringException {
-                        double d = 0;
-                        for (int i = 0; i < val1.length; i++) {
-                            d += Math.abs(val1[i] - val2[i]);
-                        }
-                        return d;
-                    }
-
+                DBSCANClusterer<INDArray> dbscan = new DBSCANClusterer<>(data, 3, .1, (INDArray val1, INDArray val2) -> {
+                    val2.mul(mask).distance2(val1.mul(mask));
                 });
                 var dbscanResult = dbscan.performClustering();
             } catch (DBSCANClusteringException ex) {
