@@ -182,6 +182,7 @@ public class DBSCANClusterer<V> {
         int index = 0;
 
         while (inputValues.size() > index) {
+            System.err.print(".");
             V p = inputValues.get(index);
             if (!visitedPoints.contains(p)) {
                 visitedPoints.add(p);

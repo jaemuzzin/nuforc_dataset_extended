@@ -241,7 +241,7 @@ public class Nuforc_extend {
             writer.close();
         }
         if (!new File("dbscan.csv").exists()) {
-            CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("dbscan.csv"));
             writer.writeRow("id", "cluster");
 
             var reader = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
@@ -250,10 +250,24 @@ public class Nuforc_extend {
             var mask = Nd4j.ones(DataType.DOUBLE, data.get(0).shape()[0]);
             mask.putScalar(mask.shape()[0], 0d);
             try {
-                DBSCANClusterer<INDArray> dbscan = new DBSCANClusterer<>(data, 3, .1, (INDArray val1, INDArray val2) -> {
-                    val2.mul(mask).distance2(val1.mul(mask));
-                });
+                DBSCANClusterer<INDArray> dbscan = new DBSCANClusterer<>(data, 3, .1, (INDArray val1, INDArray val2) -> val2.mul(mask).distance2(val1.mul(mask)));
+                System.err.println("Performing dbscan");
                 var dbscanResult = dbscan.performClustering();
+                IntSupplier i = new IntSupplier() {
+                    int i = 0;
+
+                    @Override
+                    public int getAsInt() {
+                        return this.i++;
+                    }
+                };
+                dbscanResult.
+                    stream()
+                    .flatMap(r -> {
+                        int id = i.getAsInt();
+                        return r.stream().map(arr -> new String[]{"" + (int)arr.getDouble(arr.shape()[0] - 1), ""+id});
+                    })
+                    .forEach(row -> writer.writeRow(row));
             } catch (DBSCANClusteringException ex) {
                 Logger.getLogger(Nuforc_extend.class.getName()).log(Level.SEVERE, null, ex);
             }
