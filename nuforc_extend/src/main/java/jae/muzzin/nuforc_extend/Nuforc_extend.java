@@ -250,7 +250,7 @@ public class Nuforc_extend {
             var mask = Nd4j.ones(DataType.DOUBLE, data.get(0).shape()[0]);
             mask.putScalar(mask.shape()[0], 0d);
             try {
-                DBSCANClusterer<INDArray> dbscan = new DBSCANClusterer<>(data, 3, .1, (INDArray val1, INDArray val2) -> val2.mul(mask).distance2(val1.mul(mask)));
+                DBSCANClusterer<INDArray> dbscan = new DBSCANClusterer<>(data, 3, .017, (INDArray val1, INDArray val2) -> val2.mul(mask).distance2(val1.mul(mask)));
                 System.err.println("Performing dbscan");
                 var dbscanResult = dbscan.performClustering();
                 IntSupplier i = new IntSupplier() {
