@@ -132,7 +132,7 @@ public class DBSCANClusterer<V> {
      */
     private ArrayList<V> getNeighbours(final V inputValue) throws DBSCANClusteringException {
         ConcurrentArrayList<V> neighbours = new ConcurrentArrayList<V>();
-        int BATCH_SIZE = 10000;
+        int BATCH_SIZE = 1000;
         IntSupplier is = new IntSupplier() {
             int i = 0;
 
@@ -147,16 +147,17 @@ public class DBSCANClusterer<V> {
                         .collect(Collectors.groupingBy(it -> is.getAsInt() / BATCH_SIZE)).values();
         result.stream()
                 .parallel()
-                .forEach(chunk
+                .flatMap(chunk
                         -> chunk.stream()
+                                .sequential()
                         .filter(c -> {
                             try {
                                 return metric.calculateDistance(inputValue, c) <= epsilon;
                             } catch (DBSCANClusteringException ex) {
                                 return false;
                             }
-                        }).forEach(c -> neighbours.add(c))
-                );
+                        })
+                ).forEach(c -> neighbours.add(c));
         return new ArrayList<V>(neighbours);
     }
 
