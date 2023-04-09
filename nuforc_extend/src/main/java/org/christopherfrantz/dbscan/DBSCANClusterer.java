@@ -191,6 +191,7 @@ public class DBSCANClusterer<V> {
                 if (neighbours.size() >= minimumNumberOfClusterMembers) {
                     int ind = 0;
                     while (neighbours.size() > ind) {
+                        System.err.println("Points processed " + visitedPoints.size());
                         V r = neighbours.get(ind);
                         if (!visitedPoints.contains(r)) {
                             visitedPoints.add(r);
