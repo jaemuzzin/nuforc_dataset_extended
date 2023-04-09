@@ -129,9 +129,8 @@ public class DBSCANClusterer<V> {
      */
     private ArrayList<V> getNeighbours(final V inputValue) throws DBSCANClusteringException {
         ConcurrentArrayList<V> neighbours = new ConcurrentArrayList<V>();
-        IntStream.range(0, inputValues.size())
+        inputValues.stream()
                 .parallel()
-                .mapToObj(i -> inputValues.get(i))
                 .filter(c -> {
                     try {
                         return metric.calculateDistance(inputValue, c) <= epsilon;
@@ -198,20 +197,19 @@ public class DBSCANClusterer<V> {
         int index = 0;
 
         while (inputValues.size() > index) {
-            System.err.print(".");
             V p = inputValues.get(index);
             if (!visitedPoints.contains(p)) {
                 visitedPoints.add(p);
+            System.err.print(".");
                 neighbours = getNeighbours(p);
 
                 if (neighbours.size() >= minimumNumberOfClusterMembers) {
                     int ind = 0;
                     while (neighbours.size() > ind) {
-                        System.err.println("Points processed " + visitedPoints.size());
                         V r = neighbours.get(ind);
                         if (!visitedPoints.contains(r)) {
                             visitedPoints.add(r);
-                            System.err.println("Adding a neighbor.");
+                            System.err.print(".");
                             ArrayList<V> individualNeighbours = getNeighbours(r);
                             if (individualNeighbours.size() >= minimumNumberOfClusterMembers) {
                                 neighbours = mergeRightToLeftCollection(
