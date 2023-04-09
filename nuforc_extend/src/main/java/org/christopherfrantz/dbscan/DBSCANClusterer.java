@@ -3,25 +3,27 @@ package org.christopherfrantz.dbscan;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import org.threadly.concurrent.collections.ConcurrentArrayList;
 
 /**
  * Implementation of density-based clustering algorithm DBSCAN.
- * 
- * Original Publication: 
- * Ester, Martin; Kriegel, Hans-Peter; Sander, Jörg; Xu, Xiaowei (1996). 
- * Simoudis, Evangelos; Han, Jiawei; Fayyad, Usama M., eds. 
- * A density-based algorithm for discovering clusters in large spatial 
- * databases with noise. Proceedings of the Second International Conference 
- * on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226-231
- * 
- * Usage:
- * - Identify type of input values.
- * - Implement metric for input value type using DistanceMetric interface.
- * - Instantiate using {@link #DBSCANClusterer(Collection, int, double, DistanceMetric)}.
- * - Invoke {@link #performClustering()}.
- * 
+ *
+ * Original Publication: Ester, Martin; Kriegel, Hans-Peter; Sander, Jörg; Xu,
+ * Xiaowei (1996). Simoudis, Evangelos; Han, Jiawei; Fayyad, Usama M., eds. A
+ * density-based algorithm for discovering clusters in large spatial databases
+ * with noise. Proceedings of the Second International Conference on Knowledge
+ * Discovery and Data Mining (KDD-96). AAAI Press. pp. 226-231
+ *
+ * Usage: - Identify type of input values. - Implement metric for input value
+ * type using DistanceMetric interface. - Instantiate using
+ * {@link #DBSCANClusterer(Collection, int, double, DistanceMetric)}. - Invoke
+ * {@link #performClustering()}.
+ *
  * See tests and metrics for example implementation and use.
- * 
+ *
  * @author <a href="mailto:cf@christopherfrantz.org">Christopher Frantz</a>
  * @version 0.1
  *
@@ -29,31 +31,40 @@ import java.util.HashSet;
  */
 public class DBSCANClusterer<V> {
 
-    /** maximum distance of values to be considered as cluster */
+    /**
+     * maximum distance of values to be considered as cluster
+     */
     private double epsilon = 1f;
 
-    /** minimum number of members to consider cluster */
+    /**
+     * minimum number of members to consider cluster
+     */
     private int minimumNumberOfClusterMembers = 2;
 
-    /** distance metric applied for clustering **/
+    /**
+     * distance metric applied for clustering *
+     */
     private DistanceMetric<V> metric = null;
 
-    /** internal list of input values to be clustered */
+    /**
+     * internal list of input values to be clustered
+     */
     private ArrayList<V> inputValues = null;
 
-    /** index maintaining visited points */
+    /**
+     * index maintaining visited points
+     */
     private HashSet<V> visitedPoints = new HashSet<V>();
 
     /**
-     * Creates a DBSCAN clusterer instance. 
-     * Upon instantiation, call {@link #performClustering()} 
-     * to perform the actual clustering.
-     * 
+     * Creates a DBSCAN clusterer instance. Upon instantiation, call
+     * {@link #performClustering()} to perform the actual clustering.
+     *
      * @param inputValues Input values to be clustered
      * @param minNumElements Minimum number of elements to constitute cluster
      * @param maxDistance Maximum distance of elements to consider clustered
      * @param metric Metric implementation to determine distance
-     * @throws DBSCANClusteringException 
+     * @throws DBSCANClusteringException
      */
     public DBSCANClusterer(final Collection<V> inputValues, int minNumElements, double maxDistance, DistanceMetric<V> metric) throws DBSCANClusteringException {
         setInputValues(inputValues);
@@ -64,9 +75,9 @@ public class DBSCANClusterer<V> {
 
     /**
      * Sets the distance metric
-     * 
+     *
      * @param metric
-     * @throws DBSCANClusteringException 
+     * @throws DBSCANClusteringException
      */
     public void setDistanceMetric(final DistanceMetric<V> metric) throws DBSCANClusteringException {
         if (metric == null) {
@@ -76,11 +87,11 @@ public class DBSCANClusterer<V> {
     }
 
     /**
-     * Sets a collection of input values to be clustered.
-     * Repeated call overwrite the original input values.
-     * 
+     * Sets a collection of input values to be clustered. Repeated call
+     * overwrite the original input values.
+     *
      * @param collection
-     * @throws DBSCANClusteringException 
+     * @throws DBSCANClusteringException
      */
     public void setInputValues(final Collection<V> collection) throws DBSCANClusteringException {
         if (collection == null) {
@@ -92,7 +103,7 @@ public class DBSCANClusterer<V> {
     /**
      * Sets the minimal number of members to consider points of close proximity
      * clustered.
-     * 
+     *
      * @param minimalNumberOfMembers
      */
     public void setMinimalNumberOfMembersForCluster(final int minimalNumberOfMembers) {
@@ -102,7 +113,7 @@ public class DBSCANClusterer<V> {
     /**
      * Sets the maximal distance members of the same cluster can have while
      * still be considered in the same cluster.
-     * 
+     *
      * @param maximalDistance
      */
     public void setMaximalDistanceOfClusterMembers(final double maximalDistance) {
@@ -111,26 +122,31 @@ public class DBSCANClusterer<V> {
 
     /**
      * Determines the neighbours of a given input value.
-     * 
+     *
      * @param inputValue Input value for which neighbours are to be determined
      * @return list of neighbours
-     * @throws DBSCANClusteringException 
+     * @throws DBSCANClusteringException
      */
     private ArrayList<V> getNeighbours(final V inputValue) throws DBSCANClusteringException {
-        ArrayList<V> neighbours = new ArrayList<V>();
-        for(int i=0; i<inputValues.size(); i++) {
-            V candidate = inputValues.get(i);
-            if (metric.calculateDistance(inputValue, candidate) <= epsilon) {
-                neighbours.add(candidate);
-            }
-        }
-        return neighbours;
+        ConcurrentArrayList<V> neighbours = new ConcurrentArrayList<V>();
+        IntStream.range(0, inputValues.size())
+                .parallel()
+                .mapToObj(i -> inputValues.get(i))
+                .filter(c -> {
+                    try {
+                        return metric.calculateDistance(inputValue, c) <= epsilon;
+                    } catch (DBSCANClusteringException ex) {
+                        return false;
+                    }
+                })
+                .forEach(c -> neighbours.add(c));
+        return new ArrayList<V>(neighbours);
     }
 
     /**
      * Merges the elements of the right collection to the left one and returns
      * the combination.
-     * 
+     *
      * @param neighbours1 left collection
      * @param neighbours2 right collection
      * @return Modified left collection
@@ -149,9 +165,9 @@ public class DBSCANClusterer<V> {
     /**
      * Applies the clustering and returns a collection of clusters (i.e. a list
      * of lists of the respective cluster members).
-     * 
+     *
      * @return
-     * @throws DBSCANClusteringException 
+     * @throws DBSCANClusteringException
      */
     public ArrayList<ArrayList<V>> performClustering() throws DBSCANClusteringException {
 
@@ -195,6 +211,7 @@ public class DBSCANClusterer<V> {
                         V r = neighbours.get(ind);
                         if (!visitedPoints.contains(r)) {
                             visitedPoints.add(r);
+                            System.err.println("Adding a neighbor.");
                             ArrayList<V> individualNeighbours = getNeighbours(r);
                             if (individualNeighbours.size() >= minimumNumberOfClusterMembers) {
                                 neighbours = mergeRightToLeftCollection(
