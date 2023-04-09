@@ -246,11 +246,12 @@ public class Nuforc_extend {
 
             var reader = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
             var data = reader.stream().map(r -> Nd4j.create(r.getFields().stream().mapToDouble(s -> Double.parseDouble(s)).toArray()))
+                    .map(arr -> new DBScanRecord((int)arr.getDouble(arr.shape()[0] - 1), arr))
                     .toList();
-            var mask = Nd4j.ones(DataType.DOUBLE, data.get(0).shape()[0]);
+            var mask = Nd4j.ones(DataType.DOUBLE, data.get(0).data.shape()[0]);
             mask.putScalar(mask.shape()[0]-1, 0d);
             try {
-                DBSCANClusterer<INDArray> dbscan = new DBSCANClusterer<>(data, 3, .017, (INDArray val1, INDArray val2) -> val2.mul(mask).distance2(val1.mul(mask)));
+                DBSCANClusterer<DBScanRecord> dbscan = new DBSCANClusterer<>(data, 3, .017, (DBScanRecord val1, DBScanRecord val2) -> val2.data.mul(mask).distance2(val1.data.mul(mask)));
                 System.err.println("Performing dbscan");
                 var dbscanResult = dbscan.performClustering();
                 IntSupplier i = new IntSupplier() {
@@ -265,7 +266,7 @@ public class Nuforc_extend {
                     stream()
                     .flatMap(r -> {
                         int id = i.getAsInt();
-                        return r.stream().map(arr -> new String[]{"" + (int)arr.getDouble(arr.shape()[0] - 1), ""+id});
+                        return r.stream().map(arr -> new String[]{"" + (int)arr.id, ""+id});
                     })
                     .forEach(row -> writer.writeRow(row));
             } catch (DBSCANClusteringException ex) {
@@ -379,5 +380,36 @@ public class Nuforc_extend {
                 .peek(rm -> rm.put("summary", rm.get("summary").replaceAll("\\r\\n", " ").replaceAll("\\n", " ")))
                 .forEach(rowmap -> writer.writeRow(Arrays.stream(headers).map(h -> rowmap.get(h)).collect(Collectors.toList()).toArray(new String[0])));
         writer.close();
+    }
+    public static class DBScanRecord{
+        int id;
+        INDArray data;
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 97 * hash + this.id;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final DBScanRecord other = (DBScanRecord) obj;
+            return this.id == other.id;
+        }
+
+        public DBScanRecord(int id, INDArray data) {
+            this.id = id;
+            this.data = data;
+        }
     }
 }
