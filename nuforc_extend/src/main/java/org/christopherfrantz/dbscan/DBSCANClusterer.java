@@ -3,8 +3,11 @@ package org.christopherfrantz.dbscan;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.function.IntSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.threadly.concurrent.collections.ConcurrentArrayList;
 
@@ -129,16 +132,31 @@ public class DBSCANClusterer<V> {
      */
     private ArrayList<V> getNeighbours(final V inputValue) throws DBSCANClusteringException {
         ConcurrentArrayList<V> neighbours = new ConcurrentArrayList<V>();
-        inputValues.stream()
+        int BATCH_SIZE = inputValues.size() / 10000;
+        IntSupplier is = new IntSupplier() {
+            int i = 0;
+
+            @Override
+            public int getAsInt() {
+                return i++;
+            }
+        };
+        Collection<List<V>> result
+                = inputValues
+                        .stream().parallel()
+                        .collect(Collectors.groupingBy(it -> is.getAsInt() / BATCH_SIZE)).values();
+        result.stream()
                 .parallel()
-                .filter(c -> {
-                    try {
-                        return metric.calculateDistance(inputValue, c) <= epsilon;
-                    } catch (DBSCANClusteringException ex) {
-                        return false;
-                    }
-                })
-                .forEach(c -> neighbours.add(c));
+                .forEach(chunk
+                        -> chunk.stream()
+                        .filter(c -> {
+                            try {
+                                return metric.calculateDistance(inputValue, c) <= epsilon;
+                            } catch (DBSCANClusteringException ex) {
+                                return false;
+                            }
+                        }).forEach(c -> neighbours.add(c))
+                );
         return new ArrayList<V>(neighbours);
     }
 
