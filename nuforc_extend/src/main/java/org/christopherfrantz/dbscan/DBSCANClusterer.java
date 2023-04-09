@@ -200,7 +200,6 @@ public class DBSCANClusterer<V> {
             V p = inputValues.get(index);
             if (!visitedPoints.contains(p)) {
                 visitedPoints.add(p);
-            System.err.print(".");
                 neighbours = getNeighbours(p);
 
                 if (neighbours.size() >= minimumNumberOfClusterMembers) {
@@ -209,7 +208,7 @@ public class DBSCANClusterer<V> {
                         V r = neighbours.get(ind);
                         if (!visitedPoints.contains(r)) {
                             visitedPoints.add(r);
-                            System.err.print(".");
+                            System.err.print(visitedPoints.size() + ".");
                             ArrayList<V> individualNeighbours = getNeighbours(r);
                             if (individualNeighbours.size() >= minimumNumberOfClusterMembers) {
                                 neighbours = mergeRightToLeftCollection(
