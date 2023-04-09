@@ -132,7 +132,7 @@ public class DBSCANClusterer<V> {
      */
     private ArrayList<V> getNeighbours(final V inputValue) throws DBSCANClusteringException {
         ConcurrentArrayList<V> neighbours = new ConcurrentArrayList<V>();
-        int BATCH_SIZE = inputValues.size() / 10000;
+        int BATCH_SIZE = 10000;
         IntSupplier is = new IntSupplier() {
             int i = 0;
 
