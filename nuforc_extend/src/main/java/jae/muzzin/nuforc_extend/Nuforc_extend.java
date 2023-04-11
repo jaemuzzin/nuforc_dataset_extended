@@ -193,7 +193,7 @@ public class Nuforc_extend {
             writer.close();
             writerSansNLP.close();
         }
-
+        /*
         if (!new File("3rd-nn-dist.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("3rd-nn-dist.csv"));
             var readerOuter = CsvReader.builder().build(new FileReader("nuforc_numeric.csv"));
@@ -273,7 +273,7 @@ public class Nuforc_extend {
                 Logger.getLogger(Nuforc_extend.class.getName()).log(Level.SEVERE, null, ex);
             }
             writer.close();
-        }
+        }*/
         if (!new File("kmeans_summary.csv").exists()) {
             CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_summary.csv"));
             writer.writeRow("clusters", "wcss");
