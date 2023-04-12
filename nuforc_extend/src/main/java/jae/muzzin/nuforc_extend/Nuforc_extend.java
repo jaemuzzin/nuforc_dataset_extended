@@ -304,6 +304,16 @@ public class Nuforc_extend {
             }
             writer.close();
         }
+        if (!new File("kmeans_16k_clusters_nlp.csv").exists()) {
+            CsvWriter writer = CsvWriter.builder().build(new FileWriter("kmeans_16k_clusters_nlp.csv"));
+            writer.writeRow("id", "cluster");
+            var r = K_Clusterer.cluster(16000, "nuforc_numeric.csv", true, 2000);
+            r.idToCluster
+                    .entrySet()
+                    .stream()
+                    .forEach(e -> writer.writeRow("" + e.getKey(), "" + e.getValue()));
+            writer.close();
+        }
     }
 
     public static void writeShapes() throws FileNotFoundException, IOException {
